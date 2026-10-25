@@ -1,0 +1,9 @@
+services:
+  api:
+    # Pull the image published by the "Build image" workflow...
+    image: ghcr.io/himmat12/numpy-digit-recognizer:latest
+    # ...or build it locally with `docker compose build` (uses the latest model release).
+    build: .
+    ports:
+      - "8000:8000"
+    restart: unless-stopped

@@ -6,6 +6,8 @@ Run from the project root:
 """
 
 import argparse
+import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -20,7 +22,9 @@ BATCH_SIZE = 64
 LEARNING_RATE = 0.1
 SEED = 42
 
-MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / "mnist_model.npz"
+MODELS_DIR = Path(__file__).resolve().parent.parent / "models"
+MODEL_PATH = MODELS_DIR / "mnist_model.npz"
+METRICS_PATH = MODELS_DIR / "metrics.json"  # read by CI for the accuracy check
 
 
 def accuracy(network: NeuralNetwork, x: np.ndarray, y: np.ndarray) -> float:
@@ -84,6 +88,17 @@ def main() -> None:
 
     network.save(MODEL_PATH)
     print(f"\nModel saved to {MODEL_PATH}")
+
+    metrics = {
+        "test_accuracy": accuracy(network, x_test, y_test),
+        "epochs": args.epochs,
+        "learning_rate": args.lr,
+        "batch_size": args.batch_size,
+        "hidden_size": args.hidden_size,
+        "trained_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+    }
+    METRICS_PATH.write_text(json.dumps(metrics, indent=2) + "\n")
+    print(f"Metrics saved to {METRICS_PATH}")
 
 
 if __name__ == "__main__":

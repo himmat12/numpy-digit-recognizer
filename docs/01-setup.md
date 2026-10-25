@@ -27,24 +27,29 @@ Run `deactivate` to leave it.
 
 ## 1.2 Install only what we need
 
-Dependencies are split into two files:
+Dependencies are split into three files. Each one includes the one above it (`-r ...`):
 
-| File                   | Contains          | Who needs it                         |
-|------------------------|-------------------|--------------------------------------|
-| `requirements.txt`     | `numpy`           | anyone running the code              |
-| `requirements-dev.txt` | the above + `pytest` | developers who want to run the tests |
+| File                   | Adds                                         | Who needs it                    |
+|------------------------|----------------------------------------------|---------------------------------|
+| `requirements.txt`     | `numpy`                                      | anyone training or predicting   |
+| `requirements-api.txt` | `fastapi`, `uvicorn`, `pillow`, `python-multipart` | the web service (and Docker) |
+| `requirements-dev.txt` | `pytest`, `httpx`                            | developers running the tests    |
 
 ```bash
 pip install --upgrade pip
-pip install -r requirements.txt        # just to run
-pip install -r requirements-dev.txt    # to run *and* test
+pip install -r requirements.txt        # just to train and predict
+pip install -r requirements-api.txt    # + run the API
+pip install -r requirements-dev.txt    # everything, including tests
 ```
+
+This way, the training job never installs web libraries and the Docker image never installs
+test tools.
 
 Version ranges such as `numpy>=1.26,<3` allow bug-fix updates but block a future major
 version that might break the code.
 
-Check what's installed with `pip list`. You should only see numpy, pytest and their small
-helper packages.
+Check what's installed with `pip list`. You should see only the packages above plus their
+small helper packages.
 
 ## 1.3 What is git-ignored and why
 

@@ -1,0 +1,6 @@
+# API dependencies (runtime + web service)
+-r requirements.txt
+fastapi>=0.110,<1
+uvicorn>=0.29,<1
+pillow>=10,<13
+python-multipart>=0.0.9,<1

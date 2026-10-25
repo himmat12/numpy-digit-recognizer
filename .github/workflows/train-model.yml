@@ -1,0 +1,85 @@
+# Train the network, check its accuracy and publish it as a GitHub Release.
+#
+# Each successful run creates a release "model-v<run number>" with:
+#   mnist_model.npz          the trained weights
+#   mnist_model.npz.sha256   checksum used by the Docker build to verify the download
+#   metrics.json             test accuracy and training settings
+
+name: Train model
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "digit_recognizer/**"
+      - "requirements.txt"
+      - ".github/workflows/train-model.yml"
+  workflow_dispatch: # allows "Run workflow" from the Actions tab
+
+concurrency:
+  group: train-model
+  cancel-in-progress: false
+
+env:
+  MIN_ACCURACY: "0.95" # releases below this test accuracy are rejected
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # needed to create releases
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+
+      - name: Cache MNIST dataset
+        uses: actions/cache@v6
+        with:
+          path: data
+          key: mnist-v1
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run tests
+        run: pytest -q
+
+      - name: Train
+        run: python -m digit_recognizer.train
+
+      - name: Check accuracy
+        run: |
+          cat models/metrics.json
+          python - <<'EOF'
+          import json, os, sys
+          accuracy = json.load(open("models/metrics.json"))["test_accuracy"]
+          minimum = float(os.environ["MIN_ACCURACY"])
+          if accuracy < minimum:
+              sys.exit(f"::error::Test accuracy {accuracy:.2%} is below {minimum:.2%}")
+          print(f"Test accuracy {accuracy:.2%} passes the {minimum:.2%} minimum")
+          EOF
+
+      - name: Create checksum
+        working-directory: models
+        run: sha256sum mnist_model.npz > mnist_model.npz.sha256
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="model-v${{ github.run_number }}"
+          ACCURACY=$(python -c 'import json; print(format(json.load(open("models/metrics.json"))["test_accuracy"], ".2%"))')
+          gh release create "$TAG" \
+            models/mnist_model.npz \
+            models/mnist_model.npz.sha256 \
+            models/metrics.json \
+            --target "${{ github.sha }}" \
+            --title "Model $TAG" \
+            --notes "Trained from commit ${{ github.sha }}. Test accuracy: ${ACCURACY}." \
+            --latest

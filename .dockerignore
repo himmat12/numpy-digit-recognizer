@@ -1,0 +1,13 @@
+# Keep the build context small: the image only needs code + requirements.
+.git/
+.github/
+.venv/
+data/
+models/
+tests/
+docs/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.md
+docker-compose.yml

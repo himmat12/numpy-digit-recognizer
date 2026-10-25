@@ -72,4 +72,7 @@ predict.py     load() + predict() -> digits!
   set stays untouched until the end.
 - **Momentum or Adam:** smarter update rules that usually train faster.
 - **Your own handwriting:** draw a digit, resize it to 28×28 (white digit on black background,
-  like MNIST), scale it to 0..1, and pass it to `predict()`.
+  like MNIST), scale it to 0..1, and pass it to `predict()`. The API in the next step does
+  exactly this for uploaded images.
+
+**Next:** [Step 7: Serving the model with FastAPI](07-serving-api.md)
